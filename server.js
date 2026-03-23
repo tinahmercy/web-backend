@@ -8,18 +8,13 @@ const app = express();
 
 // --- 1. CORS CONFIGURATION ---
 // Authorizing your specific Vercel URL to stop the "CORS Policy" error
+// --- 1. THE "ALLOW EVERYTHING" CORS (Temporary for testing) ---
 app.use(cors({
-    origin: [
-        "https://beautycloud-erp.vercel.app", // Your ACTUAL Vercel URL from the error
-        "http://localhost:3000",             // Local development
-        "http://localhost:5000",             // Local development 2
-        "http://127.0.0.1:5500"              // Live Server
-    ],
+    origin: "*", 
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
 }));
-
 // --- 2. MIDDLEWARE ---
 app.use(express.json());
 // Serves static files if they exist in a public folder
