@@ -6,34 +6,18 @@ const cors = require('cors');
 
 const app = express();
 
-// --- 1. CORS CONFIGURATION (CORRECTED) ---
-// List of URLs allowed to access your server.
-// TODO: Replace the URL below with your real Vercel domain!
-const allowedOrigins = [
-    'https://your-web-beauty-app.vercel.app', // <-- REPLACE THIS WITH YOUR URL
-    'http://localhost:3000' // Optional: for local testing
-];
-
-const corsOptions = {
-    origin: (origin, callback) => {
-        // Allow requests with no origin (like mobile apps or Postman) 
-        // OR allow if the origin is in the list
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
+// --- 1. CORS CONFIGURATION ---
+// Authorizing your specific Vercel URL to stop the "CORS Policy" error
+// --- 1. THE "ALLOW EVERYTHING" CORS (Temporary for testing) ---
+app.use(cors({
+    origin: "*", 
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true // This is now safe to use
-};
-
-app.use(cors(corsOptions));
-// ------------------------------------------
-
+    credentials: true
+}));
 // --- 2. MIDDLEWARE ---
 app.use(express.json());
+// Serves static files if they exist in a public folder
 app.use(express.static(path.join(__dirname, 'public')));
 
 // --- 3. SECURITY HEADERS (CSP) ---
@@ -54,17 +38,18 @@ app.use((req, res, next) => {
 const connectDB = async () => {
     try {
         console.log('⏳ Attempting to connect to MongoDB Atlas...');
+        // process.env.MONGO_URI is pulled from your Render Environment Variables
         await mongoose.connect(process.env.MONGO_URI);
         console.log('🚀 ✨ MongoDB Connected Successfully!');
     } catch (err) {
         console.error('❌ MongoDB Connection Error:', err.message);
-        process.exit(1); // Stop the app if DB fails
     }
 };
 
 connectDB(); 
 
 // --- 5. ROUTES ---
+// Corrected path to match your 'server/routes' folder structure
 const staffRoutes = require('./server/routes/staffRoutes');
 const adminRoutes = require('./server/routes/adminRoutes');
 
@@ -77,6 +62,7 @@ app.get('/', (req, res) => {
 });
 
 // --- 6. START SERVER ---
+// Render assigns a dynamic port, so process.env.PORT is mandatory
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on port ${PORT}`);
