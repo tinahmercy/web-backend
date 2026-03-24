@@ -6,28 +6,33 @@ const cors = require('cors');
 
 const app = express();
 
-// --- 1. CORS CONFIGURATION (Fixed Conflict) ---
+// --- 1. CORS CONFIGURATION ---
 const allowedOrigins = [
-    'https://your-web-beauty-app.vercel.app', // <--- REPLACE WITH YOUR ACTUAL VERCEL URL
-    'http://localhost:3000'
+    'https://beautycloud-erp.vercel.app', // Your actual Vercel URL
+    'http://localhost:3000'                // For local testing
 ];
 
-app.use(cors({
-    origin: function (origin, callback) {
-        // Allow requests with no origin (like Postman) or if in whitelist
-        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+const corsOptions = {
+    origin: (origin, callback) => {
+        // Allow requests with no origin (like Postman) or if the origin is in our list
+        if (!origin || allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
+            console.error(`CORS Blocked: ${origin}`);
             callback(new Error('Not allowed by CORS'));
         }
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true
-}));
+    credentials: true 
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); 
 
 // --- 2. MIDDLEWARE ---
 app.use(express.json());
+// Important: If your HTML files are in /public, this serves them
 app.use(express.static(path.join(__dirname, 'public')));
 
 // --- 3. SECURITY HEADERS (CSP) ---
@@ -39,16 +44,24 @@ app.use((req, res, next) => {
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
         "img-src 'self' https://images.unsplash.com data:; " +
         "font-src 'self' https://fonts.gstatic.com; " +
-        // Added 'https:' generally to connect-src to be less restrictive during debug
-        "connect-src 'self' https: http://localhost:3000 *.mongodb.net https://*.onrender.com;"
+        "connect-src 'self' https: http://localhost:3000 *.mongodb.net https://*.onrender.com https://beautycloud-erp.vercel.app;"
     );
     next();
 });
 
 // --- 4. DATABASE CONNECTION ---
-mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log('🚀 ✨ MongoDB Connected Successfully!'))
-    .catch(err => console.error('❌ MongoDB Connection Error:', err.message));
+const connectDB = async () => {
+    try {
+        if (!process.env.MONGO_URI) {
+            throw new Error("MONGO_URI is missing from environment variables!");
+        }
+        await mongoose.connect(process.env.MONGO_URI);
+        console.log('🚀 ✨ MongoDB Connected Successfully!');
+    } catch (err) {
+        console.error('❌ MongoDB Connection Error:', err.message);
+    }
+};
+connectDB(); 
 
 // --- 5. ROUTES ---
 const staffRoutes = require('./server/routes/staffRoutes');
@@ -64,5 +77,5 @@ app.get('/', (req, res) => {
 // --- 6. START SERVER ---
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`✅ Server running on port ${PORT}`);
+    console.log(`✅ Server live on port ${PORT}`);
 });
