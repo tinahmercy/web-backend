@@ -8,13 +8,12 @@ const app = express();
 
 // --- 1. CORS CONFIGURATION ---
 const allowedOrigins = [
-    'https://beautycloud-erp.vercel.app', // Your actual Vercel URL
-    'http://localhost:3000'                // For local testing
+    'https://beautycloud-erp.vercel.app',
+    'http://localhost:3000'
 ];
 
 const corsOptions = {
     origin: (origin, callback) => {
-        // Allow requests with no origin (like Postman) or if the origin is in our list
         if (!origin || allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
@@ -27,12 +26,15 @@ const corsOptions = {
     credentials: true 
 };
 
+// Apply CORS middleware
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); 
+
+// FIXED: Node v22 / Path-to-Regexp Fix
+// Changing '*' to '(.*)' to avoid the "Missing parameter name" error
+app.options('(.*)', cors(corsOptions)); 
 
 // --- 2. MIDDLEWARE ---
 app.use(express.json());
-// Important: If your HTML files are in /public, this serves them
 app.use(express.static(path.join(__dirname, 'public')));
 
 // --- 3. SECURITY HEADERS (CSP) ---
@@ -53,7 +55,8 @@ app.use((req, res, next) => {
 const connectDB = async () => {
     try {
         if (!process.env.MONGO_URI) {
-            throw new Error("MONGO_URI is missing from environment variables!");
+            console.error("❌ ERROR: MONGO_URI is missing in Render Environment Variables!");
+            return;
         }
         await mongoose.connect(process.env.MONGO_URI);
         console.log('🚀 ✨ MongoDB Connected Successfully!');
@@ -74,8 +77,8 @@ app.get('/', (req, res) => {
     res.send('WebBeauty API is Running...');
 });
 
-// --- 6. START SERVER ---
+// --- 6. START SERVER (Render Port Binding Fix) ---
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`✅ Server live on port ${PORT}`);
 });
